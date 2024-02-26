@@ -1,4 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Company.API.ExternalServices;
+using Company.Application.Services.UserProfileServices;
+using Company.Domain.Entities.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -8,38 +12,25 @@ namespace Company.API.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IWebHostEnvironment _env;
+        private readonly IUserProfileService _userService;
 
-        // GET: api/<UserController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        public UserController(IUserProfileService userProfileService,IWebHostEnvironment env)
         {
-            return new string[] { "value1", "value2" };
+            _env = env;
+            _userService = userProfileService;
         }
 
-        // GET api/<UserController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<UserController>
         [HttpPost]
-        public void Post([FromBody] string value)
+        public async Task<ActionResult<string>> CreateUser([FromForm] UserProfileDTO userProfileDTO, IFormFile picture)
         {
-        }
-
-        // PUT api/<UserController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<UserController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            UserProfileExternalService service = new UserProfileExternalService(_env);
+            
+            string picturePath = await service.AddPictureAndGetPath(picture);
+            
+            var result = await _userService.CreateUserProfileAsync(userProfileDTO, picturePath);
+            
+            return Ok(result);
         }
     }
 }
